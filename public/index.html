@@ -7,6 +7,8 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="js/sb-config.js"></script>
+    <script src="js/links-ui.js"></script>
     <style>
         * {
             margin: 0;
@@ -350,6 +352,317 @@
             background: #a8a8a8;
         }
 
+        /* Links Management Styles */
+        .links-panel {
+            background-color: #ffffff;
+            border: 1px solid #e0e0e0;
+            border-radius: 12px;
+            padding: 24px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            margin-bottom: 40px;
+        }
+
+        .links-panel h3 {
+            font-size: 1.3rem;
+            font-weight: 600;
+            color: #000000;
+            margin: 0 0 20px 0;
+        }
+
+        .links-form {
+            display: flex;
+            gap: 16px;
+            align-items: flex-end;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        .form-field {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .form-field label {
+            font-size: 0.9rem;
+            font-weight: 500;
+            color: #333333;
+        }
+
+        .form-field input {
+            padding: 10px 12px;
+            border: 1px solid #e0e0e0;
+            border-radius: 6px;
+            font-size: 0.9rem;
+            transition: border-color 0.2s;
+            background: #ffffff;
+        }
+
+        .form-field input:focus {
+            outline: none;
+            border-color: #000000;
+        }
+
+        .form-field input[type="checkbox"] {
+            width: auto;
+            margin-right: 8px;
+        }
+
+        .checkbox-field {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-sm {
+            padding: 6px 12px;
+            font-size: 0.8rem;
+            border-radius: 4px;
+        }
+
+        /* Action buttons styling */
+        .action-buttons {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .action-buttons .btn-sm {
+            width: 60px;
+            padding: 4px 8px;
+            font-size: 0.75rem;
+            border-radius: 3px;
+            margin: 0;
+            display: block;
+        }
+
+        /* Links Table Container with Scroll */
+        .links-table-container {
+            max-height: 400px;
+            overflow-y: auto;
+            border: 1px solid #e9ecef;
+            border-radius: 8px;
+            background: white;
+            margin-top: 16px;
+        }
+
+        .links-table-container::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .links-table-container::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 3px;
+        }
+
+        .links-table-container::-webkit-scrollbar-thumb {
+            background: #c1c1c1;
+            border-radius: 3px;
+        }
+
+        .links-table-container::-webkit-scrollbar-thumb:hover {
+            background: #a8a8a8;
+        }
+
+        .links-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 0;
+            display: table;
+            visibility: visible;
+        }
+
+        .links-table th {
+            background-color: #000000;
+            color: white;
+            font-weight: 600;
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+            padding: 14px 12px;
+            text-align: left;
+            border-bottom: 1px solid #333333;
+            display: table-cell;
+        }
+
+        .links-table td {
+            padding: 14px 12px;
+            border-bottom: 1px solid #f1f3f4;
+            vertical-align: middle;
+            font-size: 0.85rem;
+            display: table-cell;
+            color: #495057;
+        }
+
+        .links-table td:last-child {
+            padding: 8px 16px;
+            vertical-align: middle;
+            text-align: center;
+        }
+
+        .links-table tr:nth-child(even) {
+            background-color: #fafafa;
+        }
+
+        .links-table tr:nth-child(odd) {
+            background-color: #ffffff;
+        }
+
+        .links-table tr:hover {
+            background-color: #f5f5f5;
+        }
+
+        .url-cell {
+            max-width: 300px;
+            word-break: break-all;
+            font-family: 'Monaco', 'Menlo', monospace;
+            font-size: 0.8rem;
+            color: #333333;
+        }
+
+        .slug-cell {
+            font-family: 'Courier New', monospace;
+            font-weight: 600;
+            color: #000000;
+            background: #f5f5f5;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 0.8rem;
+            border: 1px solid #ddd;
+        }
+
+        .status-active {
+            color: #000000;
+            font-weight: 600;
+        }
+
+        .status-inactive {
+            color: #666666;
+            font-weight: 600;
+        }
+
+        .clicks-count {
+            font-weight: 600;
+            color: #000000;
+            background: #f0f0f0;
+            padding: 2px 6px;
+            border-radius: 12px;
+            font-size: 0.75rem;
+            border: 1px solid #ddd;
+        }
+
+        .last-click {
+            font-size: 0.75rem;
+            color: #6c757d;
+            font-style: italic;
+        }
+
+        .updated-at {
+            font-size: 0.75rem;
+            color: #6c757d;
+        }
+
+        /* Control Bar */
+        .links-controls {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+            padding: 12px 16px;
+            background: #f8f9fa;
+            border-radius: 6px;
+            border: 1px solid #e9ecef;
+        }
+
+        .links-controls-left {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+        }
+
+        .links-controls-left .btn-sm {
+            background: #000000;
+            color: white;
+            border: 1px solid #000000;
+        }
+
+        .links-controls-left .btn-sm:hover {
+            background: #333333;
+            border-color: #333333;
+        }
+
+        .links-controls-right {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .links-total {
+            font-size: 0.85rem;
+            color: #495057;
+            font-weight: 500;
+        }
+
+        .links-total span {
+            background: #000000;
+            color: white;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-weight: 600;
+            font-size: 0.75rem;
+        }
+
+        .error-message {
+            color: #cc0000;
+            font-size: 0.9rem;
+            margin-top: 8px;
+        }
+
+        .muted {
+            color: #666666;
+            font-style: italic;
+        }
+
+
+        @media (max-width: 768px) {
+            .links-form {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .form-field {
+                min-width: auto;
+            }
+
+            .links-table {
+                font-size: 0.8rem;
+            }
+
+            .links-table th,
+            .links-table td {
+                padding: 8px 12px;
+            }
+
+            .url-cell {
+                max-width: 200px;
+            }
+
+            .action-buttons {
+                gap: 2px;
+            }
+
+            .action-buttons .btn-sm {
+                width: 50px;
+                padding: 3px 6px;
+                font-size: 0.7rem;
+            }
+        }
+
         /* Chart Styles */
         .chart-container {
             background-color: #ffffff;
@@ -569,6 +882,66 @@
                 </div>
             </div>
 
+            <!-- Links Management Panel -->
+            <div class="links-panel" id="linksManagementPanel">
+                <h3>Links Management</h3>
+                
+                <form id="linkForm" class="links-form">
+                    <div class="form-field" style="min-width: 180px;">
+                        <label for="slugInput">Slug (ví dụ: link1)</label>
+                        <input id="slugInput" placeholder="link1" />
+                    </div>
+                    <div class="form-field" style="min-width: 320px;">
+                        <label for="urlInput">Target URL (https://...)</label>
+                        <input id="urlInput" placeholder="https://example.com/page" />
+                    </div>
+                    <div class="form-field">
+                        <label>&nbsp;</label>
+                        <div class="checkbox-field">
+                            <input id="activeInput" type="checkbox" checked />
+                            <span>Active</span>
+                        </div>
+                    </div>
+                    <div class="form-field">
+                        <label>&nbsp;</label>
+                        <div>
+                            <button id="saveBtn" type="submit" class="btn">Save</button>
+                            <button id="resetBtn" type="button" class="btn btn-secondary" style="margin-left: 8px;">Reset</button>
+                        </div>
+                    </div>
+                </form>
+                
+         
+
+        <div class="links-controls">
+            <div class="links-controls-left">
+                <button id="linksRefresh" class="btn btn-sm" type="button">Refresh</button>
+                <button onclick="if(window.loadLinksFromDashboard) window.loadLinksFromDashboard(); console.log('Manual load triggered');" class="btn btn-sm" type="button" style="background:#333333;color:white;">Load Links</button>
+                <div id="linksDebug" style="color:#000000;font-size:12px"></div>
+            </div>
+            <div class="links-controls-right">
+                <div class="links-total">Total: <span id="linksTotal">0</span></div>
+            </div>
+        </div>
+
+        <div class="links-table-container">
+            <table class="links-table" id="linksTable">
+                <thead>
+                    <tr>
+                        <th>Slug</th>
+                        <th>Target URL</th>
+                        <th>Active</th>
+                        <th>Clicks</th>
+                        <th>Last Click</th>
+                        <th>Updated At</th>
+                        <th style="width: 140px;">Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="links-tbody"></tbody>
+            </table>
+        </div>
+            </div>
+
             <!-- Chart -->
             <div class="chart-container">
                 <h2 class="chart-title">Daily Clicks Overview (Last 10 Days)</h2>
@@ -647,6 +1020,14 @@
             // Load dashboard data
             loadClicks();
             loadLifetimeKpis();
+            
+            // Load links if function exists
+            if (window.loadLinksFromDashboard) {
+                setTimeout(() => {
+                    console.log('Loading links from dashboard...');
+                    window.loadLinksFromDashboard();
+                }, 200);
+            }
         }
 
         // Dashboard Functions

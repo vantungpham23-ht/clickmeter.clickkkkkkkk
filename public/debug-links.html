@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Links Table Debug</title>
+    <style>
+        table { border-collapse: collapse; width: 100%; }
+        th, td { border: 1px solid #ccc; padding: 8px; text-align: left; }
+        th { background-color: #f0f0f0; }
+    </style>
+</head>
+<body>
+    <h1>Links Table Debug</h1>
+    
+    <div id="debug">Loading...</div>
+    
+    <table id="linksTable">
+        <thead>
+            <tr>
+                <th>Slug</th>
+                <th>Target URL</th>
+                <th>Active</th>
+                <th>Clicks</th>
+                <th>Last Click</th>
+                <th>Updated At</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody></tbody>
+    </table>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
+    <script src="js/sb-config.js"></script>
+    <script>
+        (function(){
+            const debug = document.getElementById('debug');
+            const tb = document.querySelector('#linksTable tbody');
+            
+            function setDebug(msg) {
+                debug.textContent = msg;
+                console.log(msg);
+            }
+            
+            if (!window.__SB || !window.__SB.URL || !window.__SB.ANON_KEY) {
+                setDebug('Missing Supabase config');
+                return;
+            }
+            
+            const sb = window.supabase.createClient(window.__SB.URL, window.__SB.ANON_KEY);
+            setDebug('Supabase client created');
+            
+            async function loadLinks() {
+                setDebug('Loading links...');
+                tb.innerHTML = '<tr><td colspan="7">Loading...</td></tr>';
+                
+                try {
+                    const { data, error } = await sb
+                        .from('links_with_counts')
+                        .select('slug, target_url, active, updated_at, total_clicks, last_click_at')
+                        .order('updated_at', { ascending: false })
+                        .limit(500);
+                    
+                    if (error) {
+                        setDebug('Error: ' + error.message);
+                        tb.innerHTML = '<tr><td colspan="7" style="color:red">Error: ' + error.message + '</td></tr>';
+                        return;
+                    }
+                    
+                    setDebug('Loaded ' + (data?.length || 0) + ' links');
+                    
+                    if (!data || data.length === 0) {
+                        tb.innerHTML = '<tr><td colspan="7">No links found</td></tr>';
+                        return;
+                    }
+                    
+                    tb.innerHTML = data.map(row => `
+                        <tr>
+                            <td>${row.slug}</td>
+                            <td>${row.target_url}</td>
+                            <td>${row.active ? 'yes' : 'no'}</td>
+                            <td style="text-align:right">${row.total_clicks || 0}</td>
+                            <td>${row.last_click_at ? new Date(row.last_click_at).toLocaleString() : '-'}</td>
+                            <td>${new Date(row.updated_at).toLocaleString()}</td>
+                            <td>Edit | Delete</td>
+                        </tr>
+                    `).join('');
+                    
+                } catch (err) {
+                    setDebug('Exception: ' + err.message);
+                    tb.innerHTML = '<tr><td colspan="7" style="color:red">Exception: ' + err.message + '</td></tr>';
+                }
+            }
+            
+            loadLinks();
+        })();
+    </script>
+</body>
+</html>

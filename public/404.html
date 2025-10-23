@@ -1,0 +1,45 @@
+<!doctype html>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Redirecting…</title>
+<style>
+  body{font:14px/1.5 system-ui;margin:40px;color:#111}
+  .box{max-width:680px;margin:0 auto}
+  .muted{color:#666}
+</style>
+<div class="box">
+  <h1>Redirecting…</h1>
+  <p class="muted" id="msg">Resolving short link, please wait.</p>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
+<script>
+  (async function(){
+    const sb = window.supabase.createClient(
+      "https://ctkjfyukugxhsehkpflp.supabase.co",
+      "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImN0a2pmeXVrdWd4aHNlaGtwZmxwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjExOTIyOTcsImV4cCI6MjA3Njc2ODI5N30.reLEulXpuXWiWZEWvjD_VdIggOm597Ejx-EndoqoJ8Q"
+    );
+    const path = location.pathname.replace(/^\/+/,''); // "link1" from "/link1"
+    const msg  = document.getElementById('msg');
+
+    if (!path){ msg.textContent = 'No slug provided.'; return; }
+
+    // Look up the slug
+    const { data, error } = await sb
+      .from('links')
+      .select('target_url, active')
+      .eq('slug', path)
+      .single();
+
+    if (error || !data){ msg.textContent = 'Short link not found.'; return; }
+    if (!data.active){ msg.textContent = 'This link is inactive.'; return; }
+
+    // Merge incoming UTM into target (only if keys are absent)
+    const src = new URL(location.href);
+    const tgt = new URL(data.target_url);
+    src.searchParams.forEach((v,k)=>{ if(!tgt.searchParams.has(k)) tgt.searchParams.set(k,v); });
+
+    // Redirect
+    location.replace(tgt.toString());
+  })();
+</script>
