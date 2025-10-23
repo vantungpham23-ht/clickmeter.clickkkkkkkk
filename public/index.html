@@ -1,0 +1,630 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Click Dashboard</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #ffffff;
+            color: #000000;
+            line-height: 1.6;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        .title {
+            font-size: 2.5rem;
+            font-weight: 600;
+            margin-bottom: 20px;
+            color: #000000;
+        }
+
+        .refresh-btn {
+            background-color: #000000;
+            color: #ffffff;
+            border: none;
+            padding: 12px 24px;
+            font-size: 1rem;
+            font-weight: 500;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+
+        .refresh-btn:hover {
+            background-color: #333333;
+        }
+
+        .refresh-btn:disabled {
+            background-color: #cccccc;
+            cursor: not-allowed;
+        }
+
+        .summary {
+            text-align: center;
+            margin-bottom: 30px;
+            font-size: 1.1rem;
+            color: #666666;
+        }
+
+        .error-message {
+            background-color: #f5f5f5;
+            border: 1px solid #cccccc;
+            color: #cc0000;
+            padding: 20px;
+            border-radius: 6px;
+            margin-bottom: 20px;
+            text-align: center;
+            font-weight: 500;
+        }
+
+        .loading {
+            text-align: center;
+            margin: 40px 0;
+            color: #666666;
+            font-size: 1.1rem;
+        }
+
+        .table-container {
+            background-color: #ffffff;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th {
+            background-color: #f5f5f5;
+            padding: 16px 12px;
+            text-align: left;
+            font-weight: 600;
+            color: #000000;
+            border-bottom: 1px solid #e0e0e0;
+        }
+
+        td {
+            padding: 12px;
+            border-bottom: 1px solid #f0f0f0;
+            vertical-align: top;
+        }
+
+        tr:nth-child(even) {
+            background-color: #f5f5f5;
+        }
+
+        tr:nth-child(odd) {
+            background-color: #ffffff;
+        }
+
+        tr:hover {
+            background-color: #f9f9f9;
+        }
+
+        .url-cell {
+            max-width: 300px;
+            word-break: break-all;
+            font-family: monospace;
+            font-size: 0.9rem;
+        }
+
+        .time-cell {
+            white-space: nowrap;
+            font-size: 0.9rem;
+            color: #666666;
+        }
+
+        .id-cell {
+            font-family: monospace;
+            font-size: 0.9rem;
+        }
+
+        .chart-container {
+            margin-top: 40px;
+            background-color: #ffffff;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .chart-title {
+            text-align: center;
+            font-size: 1.5rem;
+            font-weight: 600;
+            margin-bottom: 20px;
+            color: #000000;
+        }
+
+        .chart-wrapper {
+            position: relative;
+            height: 400px;
+            width: 100%;
+        }
+
+        .toast {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background-color: #000000;
+            color: #ffffff;
+            padding: 12px 20px;
+            border-radius: 6px;
+            font-weight: 500;
+            font-size: 0.9rem;
+            z-index: 1000;
+            opacity: 0;
+            transform: translateX(100%);
+            transition: all 0.3s ease;
+        }
+
+        .toast.show {
+            opacity: 1;
+            transform: translateX(0);
+        }
+
+        .footer {
+            text-align: center;
+            margin-top: 40px;
+            padding-top: 20px;
+            border-top: 1px solid #e0e0e0;
+            color: #666666;
+            font-size: 0.9rem;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 10px;
+            }
+
+            .title {
+                font-size: 2rem;
+            }
+
+            table {
+                font-size: 0.9rem;
+            }
+
+            th, td {
+                padding: 8px 6px;
+            }
+
+            .url-cell {
+                max-width: 200px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1 class="title">Click Dashboard</h1>
+            <button class="refresh-btn" onclick="loadClicks()">Refresh Data</button>
+        </div>
+
+        <div id="summary" class="summary"></div>
+        <div id="error-message" class="error-message" style="display: none;"></div>
+        <div id="loading" class="loading" style="display: none;">Loading click data...</div>
+
+        <div class="table-container">
+            <table id="clicks-table">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Link ID</th>
+                        <th>Target URL</th>
+                        <th>Time</th>
+                        <th>Referrer</th>
+                    </tr>
+                </thead>
+                <tbody id="clicks-tbody">
+                </tbody>
+            </table>
+        </div>
+
+        <div class="chart-container">
+            <h2 class="chart-title">Daily Clicks Overview</h2>
+            <div class="chart-wrapper">
+                <canvas id="clicksChart"></canvas>
+            </div>
+        </div>
+
+        <div class="footer">
+            Powered by Supabase
+        </div>
+    </div>
+
+    <!-- Toast notification -->
+    <div id="toast" class="toast">New click received!</div>
+
+    <script>
+        // Supabase configuration
+        const SUPABASE_URL = "https://ctkjfyukugxhsehkpflp.supabase.co";
+        const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImN0a2pmeXVrdWd4aHNlaGtwZmxwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjExOTIyOTcsImV4cCI6MjA3Njc2ODI5N30.reLEulXpuXWiWZEWvjD_VdIggOm597Ejx-EndoqoJ8Q";
+
+        // Initialize Supabase client
+        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+        // Chart instance
+        let clicksChart = null;
+
+        // Realtime subscription
+        let clicksSubscription = null;
+
+        // Format timestamp to local time
+        function formatTime(timestamp) {
+            const date = new Date(timestamp);
+            return date.toLocaleString();
+        }
+
+        // Show toast notification
+        function showToast(message = 'New click received!') {
+            const toast = document.getElementById('toast');
+            toast.textContent = message;
+            toast.classList.add('show');
+            
+            // Hide toast after 3 seconds
+            setTimeout(() => {
+                toast.classList.remove('show');
+            }, 3000);
+        }
+
+        // Add new click to table
+        function addNewClickToTable(click) {
+            const tbody = document.getElementById('clicks-tbody');
+            const row = tbody.insertRow(0); // Insert at the top
+            
+            // ID
+            const idCell = row.insertCell(0);
+            idCell.textContent = click.id;
+            idCell.className = 'id-cell';
+
+            // Link ID
+            const linkIdCell = row.insertCell(1);
+            linkIdCell.textContent = click.link_id || '-';
+            linkIdCell.className = 'id-cell';
+
+            // Target URL
+            const urlCell = row.insertCell(2);
+            urlCell.textContent = click.target_url || '-';
+            urlCell.className = 'url-cell';
+
+            // Time
+            const timeCell = row.insertCell(3);
+            timeCell.textContent = click.ts ? formatTime(click.ts) : '-';
+            timeCell.className = 'time-cell';
+
+            // Referrer
+            const referrerCell = row.insertCell(4);
+            referrerCell.textContent = click.referrer || '-';
+            referrerCell.className = 'url-cell';
+
+            // Highlight the new row briefly
+            row.style.backgroundColor = '#e8f4fd';
+            setTimeout(() => {
+                row.style.backgroundColor = '';
+            }, 2000);
+
+            // Remove last row if we have more than 50 rows
+            if (tbody.rows.length > 50) {
+                tbody.removeChild(tbody.lastChild);
+            }
+        }
+
+        // Update chart with new click
+        function updateChartWithNewClick(click) {
+            if (!click.ts || !clicksChart) return;
+            
+            const date = new Date(click.ts);
+            const dateKey = date.toISOString().split('T')[0];
+            
+            // Find the dataset and update the count for this date
+            const chartData = clicksChart.data;
+            const dateIndex = chartData.labels.indexOf(dateKey);
+            
+            if (dateIndex !== -1) {
+                // Date already exists, increment count
+                chartData.datasets[0].data[dateIndex]++;
+            } else {
+                // New date, add it to the chart
+                chartData.labels.push(dateKey);
+                chartData.datasets[0].data.push(1);
+                
+                // Sort labels and data to maintain chronological order
+                const sortedIndices = chartData.labels.map((label, index) => ({ label, index }))
+                    .sort((a, b) => a.label.localeCompare(b.label));
+                
+                chartData.labels = sortedIndices.map(item => item.label);
+                chartData.datasets[0].data = sortedIndices.map(item => chartData.datasets[0].data[item.index]);
+            }
+            
+            clicksChart.update();
+        }
+
+        // Set up realtime subscription
+        function setupRealtimeSubscription() {
+            // Clean up existing subscription
+            if (clicksSubscription) {
+                clicksSubscription.unsubscribe();
+            }
+
+            // Subscribe to INSERT events on clicks table
+            clicksSubscription = supabase
+                .channel('clicks-changes')
+                .on('postgres_changes', {
+                    event: 'INSERT',
+                    schema: 'public',
+                    table: 'clicks'
+                }, (payload) => {
+                    console.log('New click received:', payload.new);
+                    
+                    // Show toast notification
+                    showToast();
+                    
+                    // Add to table
+                    addNewClickToTable(payload.new);
+                    
+                    // Update chart
+                    updateChartWithNewClick(payload.new);
+                    
+                    // Update summary count
+                    const summaryDiv = document.getElementById('summary');
+                    const currentText = summaryDiv.textContent;
+                    const match = currentText.match(/Total clicks loaded: (\d+)/);
+                    if (match) {
+                        const currentCount = parseInt(match[1]);
+                        summaryDiv.textContent = `Total clicks loaded: ${currentCount + 1}`;
+                    }
+                })
+                .subscribe();
+        }
+
+        // Group clicks by date and count daily totals
+        function groupClicksByDate(clicks) {
+            const dailyCounts = {};
+            
+            clicks.forEach(click => {
+                if (click.ts) {
+                    const date = new Date(click.ts);
+                    const dateKey = date.toISOString().split('T')[0]; // YYYY-MM-DD format
+                    dailyCounts[dateKey] = (dailyCounts[dateKey] || 0) + 1;
+                }
+            });
+            
+            return dailyCounts;
+        }
+
+        // Create or update the chart
+        function updateChart(dailyCounts) {
+            const ctx = document.getElementById('clicksChart').getContext('2d');
+            
+            // Sort dates for proper display
+            const sortedDates = Object.keys(dailyCounts).sort();
+            const counts = sortedDates.map(date => dailyCounts[date]);
+            
+            // Destroy existing chart if it exists
+            if (clicksChart) {
+                clicksChart.destroy();
+            }
+            
+            // Create new chart
+            clicksChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: sortedDates,
+                    datasets: [{
+                        label: 'Clicks',
+                        data: counts,
+                        backgroundColor: '#000000',
+                        borderColor: '#000000',
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: false
+                        }
+                    },
+                    scales: {
+                        x: {
+                            title: {
+                                display: true,
+                                text: 'Date',
+                                color: '#000000',
+                                font: {
+                                    family: 'Inter',
+                                    size: 12,
+                                    weight: '500'
+                                }
+                            },
+                            ticks: {
+                                color: '#666666',
+                                font: {
+                                    family: 'Inter',
+                                    size: 11
+                                }
+                            },
+                            grid: {
+                                color: '#f0f0f0'
+                            }
+                        },
+                        y: {
+                            title: {
+                                display: true,
+                                text: 'Total Clicks',
+                                color: '#000000',
+                                font: {
+                                    family: 'Inter',
+                                    size: 12,
+                                    weight: '500'
+                                }
+                            },
+                            ticks: {
+                                color: '#666666',
+                                font: {
+                                    family: 'Inter',
+                                    size: 11
+                                },
+                                beginAtZero: true
+                            },
+                            grid: {
+                                color: '#f0f0f0'
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        // Show error message
+        function showError(message) {
+            const errorDiv = document.getElementById('error-message');
+            errorDiv.textContent = message;
+            errorDiv.style.display = 'block';
+        }
+
+        // Hide error message
+        function hideError() {
+            const errorDiv = document.getElementById('error-message');
+            errorDiv.style.display = 'none';
+        }
+
+        // Show loading state
+        function showLoading() {
+            document.getElementById('loading').style.display = 'block';
+            document.getElementById('clicks-table').style.display = 'none';
+            document.getElementById('summary').style.display = 'none';
+        }
+
+        // Hide loading state
+        function hideLoading() {
+            document.getElementById('loading').style.display = 'none';
+            document.getElementById('clicks-table').style.display = 'table';
+            document.getElementById('summary').style.display = 'block';
+        }
+
+        // Load clicks data from Supabase
+        async function loadClicks() {
+            try {
+                showLoading();
+                hideError();
+
+                // Disable refresh button during loading
+                const refreshBtn = document.querySelector('.refresh-btn');
+                refreshBtn.disabled = true;
+                refreshBtn.textContent = 'Loading...';
+
+                // Query clicks data (all records for chart, limit 50 for table)
+                const { data: allData, error: allError } = await supabase
+                    .from('clicks')
+                    .select('id, link_id, target_url, ts, referrer, user_agent')
+                    .order('ts', { ascending: false });
+
+                if (allError) {
+                    throw allError;
+                }
+
+                // Get latest 50 for table display
+                const data = allData.slice(0, 50);
+
+                // Update summary
+                const summaryDiv = document.getElementById('summary');
+                summaryDiv.textContent = `Total clicks loaded: ${data.length}`;
+
+                // Group clicks by date and update chart
+                const dailyCounts = groupClicksByDate(allData);
+                updateChart(dailyCounts);
+
+                // Clear existing table rows
+                const tbody = document.getElementById('clicks-tbody');
+                tbody.innerHTML = '';
+
+                // Add rows to table
+                data.forEach(click => {
+                    const row = tbody.insertRow();
+                    
+                    // ID
+                    const idCell = row.insertCell(0);
+                    idCell.textContent = click.id;
+                    idCell.className = 'id-cell';
+
+                    // Link ID
+                    const linkIdCell = row.insertCell(1);
+                    linkIdCell.textContent = click.link_id || '-';
+                    linkIdCell.className = 'id-cell';
+
+                    // Target URL
+                    const urlCell = row.insertCell(2);
+                    urlCell.textContent = click.target_url || '-';
+                    urlCell.className = 'url-cell';
+
+                    // Time
+                    const timeCell = row.insertCell(3);
+                    timeCell.textContent = click.ts ? formatTime(click.ts) : '-';
+                    timeCell.className = 'time-cell';
+
+                    // Referrer
+                    const referrerCell = row.insertCell(4);
+                    referrerCell.textContent = click.referrer || '-';
+                    referrerCell.className = 'url-cell';
+                });
+
+                hideLoading();
+
+                // Set up realtime subscription after initial load
+                setupRealtimeSubscription();
+
+            } catch (error) {
+                console.error('Error loading clicks:', error);
+                showError(`Failed to load click data: ${error.message}`);
+                hideLoading();
+            } finally {
+                // Re-enable refresh button
+                const refreshBtn = document.querySelector('.refresh-btn');
+                refreshBtn.disabled = false;
+                refreshBtn.textContent = 'Refresh Data';
+            }
+        }
+
+        // Load data when page loads
+        document.addEventListener('DOMContentLoaded', function() {
+            loadClicks();
+        });
+
+        // Clean up subscription when page is unloaded
+        window.addEventListener('beforeunload', function() {
+            if (clicksSubscription) {
+                clicksSubscription.unsubscribe();
+            }
+        });
+    </script>
+</body>
+</html>

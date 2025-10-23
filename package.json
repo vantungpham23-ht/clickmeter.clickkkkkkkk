@@ -1,0 +1,27 @@
+{
+  "name": "clickmeter-dashboard",
+  "version": "1.0.0",
+  "description": "A single-page web dashboard for tracking click statistics using Supabase",
+  "main": "index.html",
+  "scripts": {
+    "build": "./build.sh",
+    "start": "python3 -m http.server 8000",
+    "dev": "python3 -m http.server 8000"
+  },
+  "keywords": [
+    "dashboard",
+    "analytics",
+    "supabase",
+    "chart.js",
+    "click-tracking"
+  ],
+  "author": "ClickMeter Team",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/your-username/clickmeter-dashboard.git"
+  },
+  "engines": {
+    "node": ">=14.0.0"
+  }
+}
