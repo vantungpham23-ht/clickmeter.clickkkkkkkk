@@ -507,22 +507,10 @@
                 <button type="submit" class="auth-btn" id="login-btn">Sign In</button>
             </form>
 
-            <!-- Signup Form -->
-            <form id="signup-form" class="auth-form" style="display: none;">
-                <div class="form-group">
-                    <label class="form-label" for="signup-email">Email</label>
-                    <input type="email" id="signup-email" class="form-input" required>
-                </div>
-                <div class="form-group">
-                    <label class="form-label" for="signup-password">Password</label>
-                    <input type="password" id="signup-password" class="form-input" required minlength="6">
-                </div>
-                <button type="submit" class="auth-btn" id="signup-btn">Create Account</button>
-            </form>
-
-            <div class="auth-switch">
-                <span id="auth-switch-text">Don't have an account?</span>
-                <a href="#" id="auth-switch-link">Sign up</a>
+            <div class="auth-info">
+                <p style="text-align: center; color: #666666; font-size: 0.9rem; margin-top: 20px;">
+                    Contact administrator for account access
+                </p>
             </div>
         </div>
     </div>
@@ -605,7 +593,6 @@
         // Global variables
         let clicksChart = null;
         let clicksSubscription = null;
-        let isLoginForm = true;
 
         // Authentication Functions
         function showError(message) {
@@ -615,26 +602,6 @@
             setTimeout(() => {
                 errorDiv.style.display = 'none';
             }, 5000);
-        }
-
-        function switchAuthForm() {
-            isLoginForm = !isLoginForm;
-            const loginForm = document.getElementById('login-form');
-            const signupForm = document.getElementById('signup-form');
-            const switchText = document.getElementById('auth-switch-text');
-            const switchLink = document.getElementById('auth-switch-link');
-
-            if (isLoginForm) {
-                loginForm.style.display = 'flex';
-                signupForm.style.display = 'none';
-                switchText.textContent = "Don't have an account?";
-                switchLink.textContent = "Sign up";
-            } else {
-                loginForm.style.display = 'none';
-                signupForm.style.display = 'flex';
-                switchText.textContent = "Already have an account?";
-                switchLink.textContent = "Sign in";
-            }
         }
 
         async function signIn(email, password) {
@@ -647,21 +614,6 @@
                 if (error) throw error;
                 
                 showDashboard();
-            } catch (error) {
-                showError(error.message);
-            }
-        }
-
-        async function signUp(email, password) {
-            try {
-                const { data, error } = await supabase.auth.signUp({
-                    email: email,
-                    password: password
-                });
-
-                if (error) throw error;
-                
-                showError('Check your email for verification link!');
             } catch (error) {
                 showError(error.message);
             }
@@ -1055,18 +1007,6 @@
                 const email = document.getElementById('login-email').value;
                 const password = document.getElementById('login-password').value;
                 await signIn(email, password);
-            });
-
-            document.getElementById('signup-form').addEventListener('submit', async (e) => {
-                e.preventDefault();
-                const email = document.getElementById('signup-email').value;
-                const password = document.getElementById('signup-password').value;
-                await signUp(email, password);
-            });
-
-            document.getElementById('auth-switch-link').addEventListener('click', (e) => {
-                e.preventDefault();
-                switchAuthForm();
             });
 
             // Listen for auth state changes
